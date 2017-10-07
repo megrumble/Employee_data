@@ -10,17 +10,14 @@ var config = {
     storageBucket: "",
     messagingSenderId: "887508912266"
 };
+
 firebase.initializeApp(config);
 
 
 
 var database = firebase.database();
-/*
-var name = "";
-var start = "";
-var rate = 0;
-var role = "";
-*/
+
+moment(new Date()).format("DD/MM/YY");
 
 function Employee(name, role, start, rate) {
     this.name = name;
@@ -32,25 +29,42 @@ function Employee(name, role, start, rate) {
 
 database.ref().on("child_added", function(snapshot){ 
     var display = $("#employee-display");
+    var startDate = snapshot.val().startDate;
+    var monthsWorked = moment(startDate).diff(moment(), 'months', false) * -1;
+    var rate = snapshot.val().monthlyRate;
+    var totalBilled = rate * monthsWorked;
     var tr = $("<tr>")
         .append(`<td>${ snapshot.val().name }</td>`)
         .append(`<td>${ snapshot.val().role }</td>`)
-        .append(`<td>${ snapshot.val().startDate }</td>`)
-        .append(`<td></td>`)
-        .append(`<td>$${snapshot.val().monthlyRate }</td>`)
-        .append(`<td></td>`);
+        .append(`<td>${ startDate }</td>`)
+        .append(`<td>${ monthsWorked }</td>`)
+        .append(`<td>$${ rate }</td>`)
+        .append(`<td>$${ totalBilled }</td>`);
 
         
-    display.append(tr);
+    display.prepend(tr);
 });
 
 $("#add-employee-btn").on('click', function(e) {
+
     e.preventDefault();
+
     var name = $("#employee-name-input").val().trim();
-    var start = $("#start-input").val().trim();
+    var date = $("#start-input").val().trim();
+    
+    var start = moment(date, "DD/MM/YY").format("MM/DD/YY");
+    
     var rate = $("#rate-input").val().trim();
     var role = $("#role-input").val().trim();
     
+    if(!moment(start).isValid()) {
+        alert("Enter a proper date!");
+        return;
+    }
     database.ref().push(new Employee(name, role, start, rate));
-
+    
+    $("#employee-name-input").val("").focus();
+    $("#start-input").val("");
+    $("#rate-input").val("");
+    $("#role-input").val("");
 });
